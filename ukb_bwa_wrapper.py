@@ -33,7 +33,7 @@ def steward(config_file_path:str, ukb_bwa_path:str, send_message_script:str) -> 
     with open('ukb_bwa_command.txt', 'w') as command_f:
         command_f.write(ukb_bwa_command + '\n')
         command_f.write('return value:{}\n'.format(str(return_value)))
-    time.sleep(5)
+    time.sleep(10)
     # send the result files 
     feedback_dict = {
         'tTaskId': task_id,
@@ -120,7 +120,11 @@ def main() -> None:
     parser.add_argument('--ukb_bwa_path', required=True, help='the full path of the ukb_bwa')
     parser.add_argument('--send_message_script', required=True, help='the full path for the shell script: sendMessage.sh')
     args = parser.parse_args()
-    config_file_path = args.cfp
+    config_file_path=args.cfp
+    if os.path.isabs(config_file_path):
+        pass
+    else:
+        config_file_path = os.path.abspath(config_file_path)
     ukb_bwa_path = args.ukb_bwa_path
     send_message_script = args.send_message_script
     steward(config_file_path, ukb_bwa_path, send_message_script)
