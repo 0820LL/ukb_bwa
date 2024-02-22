@@ -38,6 +38,7 @@ def steward(config_file_path:str, ukb_bwa_path:str, send_message_script:str) -> 
         'ukbId'         : config_d['ukbId'],
         'ukbToolsCode'  : config_d['ukbToolsCode'],
         'ukbToolName'   : config_d['ukbToolName'],
+        'pipeline'      : 'ukb',
         'analysisStatus': '',
         'startDate'     : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
         'endDate'       : '',
