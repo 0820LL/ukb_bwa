@@ -3,11 +3,14 @@
 import argparse
 import os
 import json
+import sys
 import time
 import logging
 
 def send_json_message(analysis_path:str, send_message_script: str, message: dict, step_file_name:str) -> None:
+    # single quotation marks are the must
     os.system('bash {} \'{}\' 1>>final_message.log 2>&1'.format(send_message_script, json.dumps(message, ensure_ascii=False, indent=2)))
+    logging.info('bash {} \'{}\' 1>>final_message.log 2>&1'.format(send_message_script, json.dumps(message, ensure_ascii=False, indent=2)))
     with open('{}/{}'.format(analysis_path, step_file_name), 'w') as step_f:
         json.dump(message, fp=step_f, ensure_ascii=False, indent=4)
 
@@ -18,11 +21,13 @@ def steward(config_file_path:str, ukb_bwa_path:str, send_message_script:str) -> 
     with open(config_file_path, 'r') as config_f:
         config_d = json.load(config_f)
     params_d = {
-        'fastq_1'    : config_d['ukbParams']['fastq_1'],
-        'fastq_2'    : config_d['ukbParams']['fastq_2'],
-        'bwa_index'  : config_d['ukbParams']['bwa_index'],
-        'threads_num': config_d['ukbParams']['threads_num']
+        'fastq_1'    : config_d['ukbParams']['fastq1'],
+        'fastq_2'    : config_d['ukbParams']['fastq2'],
+        'bwa_index'  : config_d['ukbParams']['BWA-MEN'],
+        'threads_num': config_d['ukbParams']['numberOfThreads']
     }
+    if params_d['threads_num'] == '':
+        params_d['threads_num'] = 1
     # make the params.json file
     params_file_path = '{}/params.json'.format(analysis_path)
     with open(params_file_path, 'w') as params_f:
@@ -31,12 +36,12 @@ def steward(config_file_path:str, ukb_bwa_path:str, send_message_script:str) -> 
     return_value = os.system(ukb_bwa_command)
     logging.info(ukb_bwa_command)
     logging.info('return value:{}\n'.format(str(return_value)))
-    time.sleep(10)
+    time.sleep(20)
     # send the result files 
     feedback_dict = {
         'uuid'          : config_d['uuid'],
         'ukbId'         : config_d['ukbId'],
-        'ukbToolsCode'  : config_d['ukbToolsCode'],
+        'ukbToolsCode'  : config_d['ukbToolCode'],
         'ukbToolName'   : config_d['ukbToolName'],
         'pipeline'      : 'ukb',
         'analysisStatus': '',
@@ -55,6 +60,7 @@ def steward(config_file_path:str, ukb_bwa_path:str, send_message_script:str) -> 
         feedback_dict['endDate']        = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
         feedback_dict['error']          = 1
         send_json_message(analysis_path, send_message_script, feedback_dict, 'start.json')
+        sys.exit()
     flag = 0
     while True:
         execution_trace_file = '{}/results'.format(analysis_path)
@@ -130,7 +136,12 @@ def main() -> None:
     send_message_script = args.send_message_script
     # logging
     log_file = '{}/ukb_bwa.log'.format(os.path.dirname(config_file_path))
-    logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        filename=log_file, 
+        level=logging.INFO, 
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     steward(config_file_path, ukb_bwa_path, send_message_script)
 
 
